@@ -11,21 +11,24 @@ DESCRIPTION
 
 OPTIONS
 
-    --read
+    -r, --read
         Read an issue record.
 
-    --write
+    -w, --write
         Write an issue record.
 
-    --modify
+    -m, --modify
         Modify an issue record.
 
-    --help
+    -c, --comment
+        Comment on an issue.
+
+    -h, --help
         Display this message.
 
 ARGUMENTS
 
-    --id <id>
+    --id, --issue-id <id>
         Unique identifier for the issue.
 
     --date-discovered <date>
@@ -40,10 +43,10 @@ ARGUMENTS
     --code-review-date <date>
         Date the code review passed.
 
-    --integration-test-date <date>
+    --integration-test-date, --alpha-test-date <date>
         Date the integration test passed.
 
-    --system-test-date <date>
+    --system-test-date, --beta-test-date <date>
         Date the system test passed.
 
     --version-deployed <version>
@@ -60,6 +63,42 @@ FILES
 import sys
 import getopt
 import sqlite3
+import time
+
+
+'''
+Print a header for rows of issues.
+'''
+def print_header():
+    print '''
+issue-id   name       date-disc  version-i  unit-test  code-revi  alpha-tes  beta-test  version-d
+                      overed     dentified  -date      ew-date    t-date     -date      eployed
+---------------------------------------------------------------------------------------------------'''
+
+
+'''
+Print an issue.
+'''
+def print_issue(issue, issue_fields, csv=None):
+    # print 'issue-id              =', issue['issue_id']
+    # print 'name                  =', issue['name']
+    # print 'date-discovered       =', issue['date_discovered']
+    # print 'version-identified    =', issue['version_identified']
+    # print 'unit-test-date        =', issue['unit_test_date']
+    # print 'code-review-date      =', issue['code_review_date']
+    # print 'integration-test-date =', issue['integration_test_date']
+    # print 'system-test-date      =', issue['system_test_date']
+    # print 'version-deployed      =', issue['version_deployed']
+
+    if csv:
+        result = ''
+        for key in issue_fields:
+            result += ',' + issue[key]
+        print result[1:]
+    else:
+        for key in issue_fields:
+            sys.stdout.write('{0:11}'.format(issue[key]))
+        sys.stdout.write('\n')
 
 '''
 Initialize the slim.sqlite3 database. Create tables if necessary.
@@ -88,7 +127,7 @@ def init_db(filename):
         # Create table
         cursor.execute('''
             CREATE TABLE issues (
-                issue_id                text PRIMARY KEY,
+                issue_id                text UNIQUE PRIMARY KEY,
                 name                    text,
                 date_discovered         text,
                 version_identified      text,
@@ -112,77 +151,167 @@ def init_db(filename):
     return (conn, cursor)
 
 def write_issue(conn, cursor, issue):
+    try:
+        cursor.execute('''
+            REPLACE INTO issues
+            (issue_id, name, date_discovered, version_identified,
+             unit_test_date,
+             code_review_date, integration_test_date, system_test_date,
+             version_deployed)
+            VALUES
+            (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', ( \
+            issue['issue_id'], \
+            issue['name'], \
+            issue['date_discovered'], \
+            issue['version_identified'], \
+            issue['unit_test_date'], \
+            issue['code_review_date'], \
+            issue['integration_test_date'], \
+            issue['system_test_date'], \
+            issue['version_deployed'] \
+            ))
+        conn.commit()
+        print issue['issue_id']
+    except:
+        print 'Could not write new issue record.'
+        sys.exit(0)
+
+def read_issue(conn, cursor, issue):
+    term_list = []
+    for pair in issue.items():
+        if pair[1] != '':
+            if pair[1][0] in ['<', '>']:
+                term = pair[0] + " " + pair[1][0] + " '" + pair[1][1:] + "'"
+            elif pair[1][0] == '!':
+                term = pair[0] + " NOT LIKE '" + pair[1][1:] + "'"
+            else:
+                term = pair[0] + " LIKE '" + pair[1] + "'"
+            term_list.append(term)
+    search = ''
+    if len(term_list) > 0:
+        search = 'WHERE ' + ' AND '.join(term_list)
+
     cursor.execute('''
-        REPLACE INTO issues
-        (issue_id, name, date_discovered, version_identified, unit_test_date,
-         code_review_date, integration_test_date, system_test_date,
-         version_deployed)
-        VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ( \
-        issue['id'], \
-        issue['name'], \
-        issue['date_discovered'], \
-        issue['version_identified'], \
-        issue['unit_test_date'], \
-        issue['code_review_date'], \
-        issue['integration_test_date'], \
-        issue['system_test_date'], \
-        issue['version_deployed'] \
-        ))
-    conn.commit()
+        SELECT
+            issue_id, name, date_discovered, version_identified, unit_test_date,
+            code_review_date, integration_test_date, system_test_date,
+            version_deployed
+        FROM issues
+        {}
+        '''.format(search))
+    issue_list = []
+    cur_issue = {}
+    for row in cursor:
+        cur_issue['issue_id']               = row[0]
+        cur_issue['name']                   = row[1]
+        cur_issue['date_discovered']        = row[2]
+        cur_issue['version_identified']     = row[3]
+        cur_issue['unit_test_date']         = row[4]
+        cur_issue['code_review_date']       = row[5]
+        cur_issue['integration_test_date']  = row[6]
+        cur_issue['system_test_date']       = row[7]
+        cur_issue['version_deployed']       = row[8]
+        issue_list.append(cur_issue.copy())
+
+        # print 'issue-id              =', row[0]
+        # print 'name                  =', row[1]
+        # print 'date-discovered       =', row[2]
+        # print 'version-identified    =', row[3]
+        # print 'unit-test-date        =', row[4]
+        # print 'code-review-date      =', row[5]
+        # print 'integration-test-date =', row[6]
+        # print 'system-test-date      =', row[7]
+        # print 'version-deployed      =', row[8]
+
+    return issue_list
+
+def modify_issue(conn, cursor, issue):
+    search = {'issue_id':issue['issue_id']}
+    issue_list = read_issue(conn, cursor, search)
+    for old_issue in issue_list:
+        for key in issue.keys():
+            # copy over if not empty string
+            if (issue[key] != ''):
+                old_issue[key] = issue[key]
+        write_issue(conn, cursor, old_issue)
+    issue_list = read_issue(conn, cursor, search)
+    return issue_list
 
 def main():
     # parse command line options
+    option_list =  ['help', \
+                    'read', \
+                    'write', \
+                    'modify', \
+                    'comment', \
+                    'csv', \
+                    'id=', \
+                    'issue-id=', \
+                    'name=', \
+                    'date-discovered=', \
+                    'version-identified=', \
+                    'unit-test-date=', \
+                    'code-review-date=', \
+                    'integration-test-date=', \
+                    'alpha-test-date=', \
+                    'system-test-date=', \
+                    'beta-test-date=', \
+                    'version-deployed=' \
+                    ]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'h', \
-                                   ['help', \
-                                    'read', \
-                                    'write', \
-                                    'modify', \
-                                    'id=', \
-                                    'name=', \
-                                    'date-discovered=', \
-                                    'version-identified=', \
-                                    'unit-test-date=', \
-                                    'code-review-date=', \
-                                    'integration-test-date=', \
-                                    'system-test-date=', \
-                                    'version-deployed=' \
-                                    ])
+        opts, args = getopt.getopt(sys.argv[1:], 'hrwmc', option_list)
     except getopt.error, msg:
         print msg
         print 'What? Trying using --help for help.'
         sys.exit(2)
 
     # issue and comment data structures
+    issue_fields = ('issue_id', \
+                    'name', \
+                    'date_discovered', \
+                    'version_identified', \
+                    'unit_test_date',\
+                    'code_review_date', \
+                    'integration_test_date', \
+                    'system_test_date', \
+                    'version_deployed')
+
+    comment_fields = ('issue_id', \
+                      'comment_id', \
+                      'date_created', \
+                      'comment')
+
     issue = {}
-    issue['id'] = '0'
-    issue['name'] = 'empty issue'
-    issue['date_discovered'] = ''
-    issue['version_identified'] = ''
-    issue['unit_test_date'] = ''
-    issue['code_review_date'] = ''
-    issue['integration_test_date'] = ''
-    issue['system_test_date'] = ''
-    issue['version_deployed'] = ''
+    for key in issue_fields:
+        issue[key] = '';
 
     comment = {}
+    for key in comment_fields:
+        comment[key] = '';
 
     # process options
+    command = ''
     for o, a in opts:
         if o in ('-h', '--help'):
             print __doc__
             sys.exit(0)
-        if o in ('--read'):
-            option = 'read'
-        if o in ('--write'):
-            option = 'write'
-        if o in ('--modify'):
-            option = 'modify'
+        if o in ('-r', '--read'):
+            command = 'read'
+        if o in ('-w', '--write'):
+            command = 'write'
+        if o in ('-m', '--modify'):
+            command = 'modify'
+        if o in ('-c', '--comment'):
+            command = 'comment'
 
-        if o in ('--id'):
-            issue['id'] = a
+        if o in ('--csv'):
+            csv = True
+        else:
+            csv = False
+
+        if o in ('--id', '--issue-id'):
+            issue['issue_id'] = a
         if o in ('--name'):
             issue['name'] = a
         if o in ('--date-discovered'):
@@ -193,19 +322,31 @@ def main():
             issue['unit_test_date'] = a
         if o in ('--code-review-date'):
             issue['code_review_date'] = a
-        if o in ('--integration-test-date'):
+        if o in ('--integration-test-date', '--alpha-test-date'):
             issue['integration_test_date'] = a
-        if o in ('--system-test-date'):
+        if o in ('--system-test-date', '--beta-test-date'):
             issue['system_test_date'] = a
         if o in ('--version-deployed'):
             issue['version_deployed'] = a
 
     (conn, cursor) = init_db('slim.sqlite3')
 
-    if (option == 'read'):
-        read_issue(conn, cursor, issue)
-    if (option == 'write'):
+    if (command == 'read'):
+        issue_list = read_issue(conn, cursor, issue)
+        if (not csv):
+            print_header()
+        for issue in issue_list:
+            print_issue(issue, issue_fields, csv)
+    if (command == 'write'):
+        if (issue['issue_id'] == ''):
+            issue['issue_id'] = str(int(time.time()))
         write_issue(conn, cursor, issue)
+    if (command == 'modify'):
+        issue_list = modify_issue(conn, cursor, issue)
+        # if (not csv):
+        #     print_header()
+        # for issue in issue_list:
+        #     print_issue(issue, issue_fields, csv)
 
     # close the database
     conn.close()
