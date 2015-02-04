@@ -62,7 +62,7 @@ import getopt
 import sqlite3
 
 '''
-Initialize the slim.sqlite3 database, if necessary.
+Initialize the slim.sqlite3 database. Create tables if necessary.
 '''
 def init_db(filename):
 
@@ -72,23 +72,65 @@ def init_db(filename):
 
     # See if table exists
     cursor.execute('''
-        SELECT name FROM sqlite_master WHERE type='table' AND name='{}';
-        '''.format('slim.sqlite3'))
-
-    # Create table
-    cursor.execute('''
-        CREATE TABLE stocks (
-            id                      text,
-            date_discovered         text,
-            version_identified      text,
-            unit_test_date          text,
-            code_review_date        text,
-            integration_test_date   text,
-            system_test_date        text,
-            version_deployed        text)
+        SELECT name
+        FROM sqlite_master
+        WHERE type='table' AND name='issues';
         ''')
+    issues_table_exists = cursor.fetchone()
+    cursor.execute('''
+        SELECT name
+        FROM sqlite_master
+        WHERE type='table' AND name='comments';
+        ''')
+    comments_table_exists = cursor.fetchone()
 
+    if (issues_table_exists == None):
+        # Create table
+        cursor.execute('''
+            CREATE TABLE issues (
+                issue_id                text PRIMARY KEY,
+                name                    text,
+                date_discovered         text,
+                version_identified      text,
+                unit_test_date          text,
+                code_review_date        text,
+                integration_test_date   text,
+                system_test_date        text,
+                version_deployed        text);
+            ''')
+        conn.commit()
+    if (comments_table_exists == None):
+        # Create comments table
+        cursor.execute('''
+            CREATE TABLE comments (
+                issue_id        text,
+                comment_id      text,
+                date_created    text,
+                comment         text);
+            ''')
+        conn.commit()
     return (conn, cursor)
+
+def write_issue(conn, cursor, issue):
+    cursor.execute('''
+        REPLACE INTO issues
+        (issue_id, name, date_discovered, version_identified, unit_test_date,
+         code_review_date, integration_test_date, system_test_date,
+         version_deployed)
+        VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', ( \
+        issue['id'], \
+        issue['name'], \
+        issue['date_discovered'], \
+        issue['version_identified'], \
+        issue['unit_test_date'], \
+        issue['code_review_date'], \
+        issue['integration_test_date'], \
+        issue['system_test_date'], \
+        issue['version_deployed'] \
+        ))
+    conn.commit()
 
 def main():
     # parse command line options
@@ -97,28 +139,73 @@ def main():
                                    ['help', \
                                     'read', \
                                     'write', \
-                                    'modify'])
+                                    'modify', \
+                                    'id=', \
+                                    'name=', \
+                                    'date-discovered=', \
+                                    'version-identified=', \
+                                    'unit-test-date=', \
+                                    'code-review-date=', \
+                                    'integration-test-date=', \
+                                    'system-test-date=', \
+                                    'version-deployed=' \
+                                    ])
     except getopt.error, msg:
         print msg
         print 'What? Trying using --help for help.'
         sys.exit(2)
+
+    # issue and comment data structures
+    issue = {}
+    issue['id'] = '0'
+    issue['name'] = 'empty issue'
+    issue['date_discovered'] = ''
+    issue['version_identified'] = ''
+    issue['unit_test_date'] = ''
+    issue['code_review_date'] = ''
+    issue['integration_test_date'] = ''
+    issue['system_test_date'] = ''
+    issue['version_deployed'] = ''
+
+    comment = {}
+
     # process options
     for o, a in opts:
         if o in ('-h', '--help'):
             print __doc__
             sys.exit(0)
         if o in ('--read'):
-            print 'Read!';
+            option = 'read'
         if o in ('--write'):
-            print 'Write!';
+            option = 'write'
         if o in ('--modify'):
-            print 'Modify!';
-    # process arguments
-    for arg in args:
-        process(arg) # process() is defined elsewhere
+            option = 'modify'
 
+        if o in ('--id'):
+            issue['id'] = a
+        if o in ('--name'):
+            issue['name'] = a
+        if o in ('--date-discovered'):
+            issue['date_discovered'] = a
+        if o in ('--version-identified'):
+            issue['version_identified'] = a
+        if o in ('--unit-test-date'):
+            issue['unit_test_date'] = a
+        if o in ('--code-review-date'):
+            issue['code_review_date'] = a
+        if o in ('--integration-test-date'):
+            issue['integration_test_date'] = a
+        if o in ('--system-test-date'):
+            issue['system_test_date'] = a
+        if o in ('--version-deployed'):
+            issue['version_deployed'] = a
 
     (conn, cursor) = init_db('slim.sqlite3')
+
+    if (option == 'read'):
+        read_issue(conn, cursor, issue)
+    if (option == 'write'):
+        write_issue(conn, cursor, issue)
 
     # close the database
     conn.close()

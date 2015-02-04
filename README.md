@@ -3,7 +3,7 @@
 Issue tracking software is often cumbersome and overkill for small projects.  Slim is a very low-impact issue tracking system.
 
 - Issues do not have an explicit state.
-- Records dates issue was successfully tested (unit, integration, system).
+- Records dates issue was successfully tested (unit, code review, integration, system).
 
 ## Components
 
@@ -34,8 +34,8 @@ An issue record consists of:
 
 A Comment record consists of:
 
-| Field   | Description                |
-|:--------|:---------------------------|
-| id      | Reference to an issue id.  |
-| date    | Date the note was created. |
-| comment | Text of the comment.       |
+| Field        | Description                |
+|:-------------|:---------------------------|
+| id           | Reference to an issue id.  |
+| date-created | Date the note was created. |
+| comment      | Text of the comment.       |
