@@ -23,10 +23,16 @@ OPTIONS
     -c, --comment
         Comment on an issue.
 
+    --csv
+        Output using comma separated values
+
     -h, --help
         Display this message.
 
-ARGUMENTS
+OPTIONS WITH ARGUMENTS
+
+    --db <filename>
+        Filename of the database file to use. Defaults to slim.sqlite3.
 
     --id, --issue-id <id>
         Unique identifier for the issue.
@@ -103,10 +109,10 @@ def print_issue(issue, issue_fields, csv=None):
 '''
 Initialize the slim.sqlite3 database. Create tables if necessary.
 '''
-def init_db(filename):
+def init_db(filename = 'slim.sqlite3'):
 
     # open the database
-    conn = sqlite3.connect('slim.sqlite3')
+    conn = sqlite3.connect(filename)
     cursor = conn.cursor()
 
     # See if table exists
@@ -246,6 +252,7 @@ def main():
                     'modify', \
                     'comment', \
                     'csv', \
+                    'db=', \
                     'id=', \
                     'issue-id=', \
                     'name=', \
@@ -292,6 +299,7 @@ def main():
 
     # process options
     command = ''
+    db = 'slim.sqlite3'
     for o, a in opts:
         if o in ('-h', '--help'):
             print __doc__
@@ -309,6 +317,9 @@ def main():
             csv = True
         else:
             csv = False
+
+        if o in ('--db'):
+            db = a
 
         if o in ('--id', '--issue-id'):
             issue['issue_id'] = a
@@ -329,7 +340,7 @@ def main():
         if o in ('--version-deployed'):
             issue['version_deployed'] = a
 
-    (conn, cursor) = init_db('slim.sqlite3')
+    (conn, cursor) = init_db(db)
 
     if (command == 'read'):
         issue_list = read_issue(conn, cursor, issue)
