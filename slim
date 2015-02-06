@@ -1,6 +1,70 @@
 #!/usr/bin/env python
 
-'''NAME
+import cgi
+import getopt
+import sqlite3
+import sys
+import time
+import urllib
+
+import BaseHTTPServer
+import CGIHTTPServer
+# import cgitb; cgitb.enable()
+
+import inspect
+
+class SlimHandler (CGIHTTPServer.CGIHTTPRequestHandler):
+
+    def do_GET(self):
+        f = open('./slim.html')
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(f.read())
+        f.close()
+        return
+
+    def do_POST(self):
+
+        content_len = int(self.headers['Content-Length'])
+        form_data = self.rfile.read(content_len)
+        params = form_data.split('&')
+        form = {}
+        for p in params:
+            (key, value) = p.split('=')
+            value = urllib.unquote_plus(value)
+            form[key] = value
+
+        # TODO: use the form data to manage tickets
+        print '================'
+        print 'FORM:', form
+        print '================'
+
+        f = open('./slim.html')
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+
+        opts = [('--table', '')]
+        if form['command'] == 'Read':
+            opts.append(('-r', ''))
+        elif form['command'] == 'Modify':
+            opts.append(('-m', ''))
+
+        for (key, value) in form.iteritems():
+            if key[0] != '-':
+                key = '--' + key
+            # value = '"' + value + '"'
+            opts.append((key, value))
+        issues = slim_exec(opts)
+        html = f.read()
+        html = html.replace('<!--issues-->', issues)
+        self.wfile.write(html)
+        f.close()
+        return
+
+
+help = '''NAME
     slim -- Super-Lighweight Issue Manager
 
 SYNOPSIS
@@ -22,6 +86,9 @@ OPTIONS
 
     -c, --comment
         Comment on an issue.
+
+    --server
+        Start a web server.
 
     --csv
         Output using comma separated values
@@ -66,10 +133,6 @@ FILES
     slim.sqlite3
         The SQLite3 database that stores issue and comment records.
 '''
-import sys
-import getopt
-import sqlite3
-import time
 
 
 '''
@@ -85,7 +148,7 @@ issue-id   name       date-disc  version-i  unit-test  code-revi  alpha-tes  bet
 '''
 Print an issue.
 '''
-def print_issue(issue, issue_fields, csv=None):
+def print_issue(issue, issue_fields, csv=None, table=None):
     # print 'issue-id              =', issue['issue_id']
     # print 'name                  =', issue['name']
     # print 'date-discovered       =', issue['date_discovered']
@@ -96,15 +159,24 @@ def print_issue(issue, issue_fields, csv=None):
     # print 'system-test-date      =', issue['system_test_date']
     # print 'version-deployed      =', issue['version_deployed']
 
-    if csv:
-        result = ''
+    result = ''
+    if table:
+        result += '<tr>'
+        for key in issue_fields:
+            result += '<td>' + issue[key] + '</td>'
+        result += '</tr>'
+    elif csv:
         for key in issue_fields:
             result += ',' + issue[key]
-        print result[1:]
+        result = result[1:]
+        print result
     else:
         for key in issue_fields:
             sys.stdout.write('{0:11}'.format(issue[key]))
+            result += '{0:11}'.format(issue[key]);
         sys.stdout.write('\n')
+        result += '\n'
+    return result
 
 '''
 Initialize the slim.sqlite3 database. Create tables if necessary.
@@ -178,10 +250,11 @@ def write_issue(conn, cursor, issue):
             issue['version_deployed'] \
             ))
         conn.commit()
-        print issue['issue_id']
     except:
         print 'Could not write new issue record.'
         sys.exit(0)
+    print issue['issue_id']
+    return issue['issue_id']
 
 def read_issue(conn, cursor, issue):
     term_list = []
@@ -198,14 +271,21 @@ def read_issue(conn, cursor, issue):
     if len(term_list) > 0:
         search = 'WHERE ' + ' AND '.join(term_list)
 
-    cursor.execute('''
-        SELECT
-            issue_id, name, date_discovered, version_identified, unit_test_date,
-            code_review_date, integration_test_date, system_test_date,
-            version_deployed
-        FROM issues
-        {}
-        '''.format(search))
+    try:
+        cursor.execute('''
+            SELECT
+                issue_id, name, date_discovered, version_identified,
+                unit_test_date,
+                code_review_date, integration_test_date, system_test_date,
+                version_deployed
+            FROM issues
+            {}
+            ORDER BY version_deployed, system_test_date,
+            integration_test_date, code_review_date, unit_test_date,
+            date_discovered DESC
+            '''.format(search))
+    except:
+        sys.stderr.write('ERROR: SELECT failed\n');
     issue_list = []
     cur_issue = {}
     for row in cursor:
@@ -252,6 +332,8 @@ def main():
                     'modify', \
                     'comment', \
                     'csv', \
+                    'table', \
+                    'server', \
                     'db=', \
                     'id=', \
                     'issue-id=', \
@@ -272,6 +354,12 @@ def main():
         print msg
         print 'What? Trying using --help for help.'
         sys.exit(2)
+    slim_exec(opts)
+
+'''
+opts is a list of (key,value) pairs.
+'''
+def slim_exec(opts):
 
     # issue and comment data structures
     issue_fields = ('issue_id', \
@@ -298,11 +386,14 @@ def main():
         comment[key] = '';
 
     # process options
+    csv = False
+    table = False
     command = ''
     db = 'slim.sqlite3'
+    # print opts
     for o, a in opts:
         if o in ('-h', '--help'):
-            print __doc__
+            print help
             sys.exit(0)
         if o in ('-r', '--read'):
             command = 'read'
@@ -313,10 +404,14 @@ def main():
         if o in ('-c', '--comment'):
             command = 'comment'
 
+        if o in ('--server'):
+            command = 'server'
+
         if o in ('--csv'):
             csv = True
-        else:
-            csv = False
+
+        if o in ('--table'):
+            table = True
 
         if o in ('--db'):
             db = a
@@ -342,16 +437,18 @@ def main():
 
     (conn, cursor) = init_db(db)
 
+    result = ''
+
     if (command == 'read'):
         issue_list = read_issue(conn, cursor, issue)
-        if (not csv):
+        if (not (csv or table)):
             print_header()
         for issue in issue_list:
-            print_issue(issue, issue_fields, csv)
+            result += print_issue(issue, issue_fields, csv, table)
     if (command == 'write'):
         if (issue['issue_id'] == ''):
             issue['issue_id'] = str(int(time.time()))
-        write_issue(conn, cursor, issue)
+        result += write_issue(conn, cursor, issue)
     if (command == 'modify'):
         issue_list = modify_issue(conn, cursor, issue)
         # if (not csv):
@@ -359,8 +456,30 @@ def main():
         # for issue in issue_list:
         #     print_issue(issue, issue_fields, csv)
 
+    if (command == 'server'):
+        try:
+            server = BaseHTTPServer.HTTPServer(('127.0.0.1', 5150), SlimHandler)
+            print "========================================"
+            print "It's alive!  It's alive!"
+            print "Starting a web server on port 5150."
+            print "Talk to me."
+            print "========================================"
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print "\n========================================"
+            print "Got a Hi-^C.  And I could've had a V8!"
+            print "This is the way the world ends"
+            print "This is the way the world ends"
+            print "This is the way the world ends"
+            print "Et tu, Brute?"
+            print "========================================"
+            server.socket.close()
+
     # close the database
     conn.close()
+
+    # Return any output
+    return result
 
 if __name__ == '__main__':
     main()

@@ -119,7 +119,7 @@ ID=`${CMD} -m --db ${DB} \
 --id ${IDU} \
 --name UNIQUE`
 
-if [ "${ID}" != "${IDU}" ] ; then echo "ERROR: ID != IDU, unique id generation is broken" ; exit; fi
+if [ "${ID}" != "${IDU}" ] ; then echo "ERROR: ID != IDU, unique id generation is broken" ; echo "ERROR: ${ID} != ${IDU}"; exit; fi
 
 CNT=`${CMD} -r --db ${DB} | wc -w`
 

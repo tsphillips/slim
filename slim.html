@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SLIM</title>
+</head>
+<body>
+  <h1>SLIM</h1>
+  <div>
+    <div>
+      <pre>
+        Somebody set up us the bug.
+        Main slim turn on.
+        All your issue are belong to us.
+      </pre>
+    </div>
+
+    <div style='border:3px solid black;width:50%;'>
+      <div>
+        <form action="slim.html" method="post">
+          <table border='1' summary='Input for issue selection and modification.'>
+            <caption>Input for issue selection and modification.</caption>
+            <tbody>
+              <tr><td>issue-id</td><td><input type='text' name='issue-id'></td>
+              <tr><td>name</td><td><textarea name='name'></textarea></td>
+              <tr><td>date-discovered</td><td><input type='text' name='date-discovered'></td>
+              <tr><td>version-identified</td><td><input type='text' name='version-identified'></td>
+              <tr><td>unit-test</td><td><input type='text' name='unit-test'></td>
+              <tr><td>code-review</td><td><input type='text' name='code-review'></td>
+              <tr><td>alpha-test</td><td><input type='text' name='alpha-test'></td>
+              <tr><td>beta-test</td><td><input type='text' name='beta-test'></td>
+              <tr><td>version-deployed</td><td><input type='text' name='version-deployed'></td>
+            </tbody>
+          </table>
+
+          <hr>
+          <input type='submit' name='command' value='Read'>
+          <input type='submit' name='command' value='Modify'>
+          <input type='submit' name='command' value='Write' disabled='disabled'>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <p>&nbsp;</div>
+
+  <div style='width:100%;'>
+
+    <table border='1' summary='List of select managed issues.'>
+      <caption>List of Selected Issues</caption>
+      <tbody>
+        <tr>
+          <th>issue-id</th>
+          <th>name</th>
+          <th>date-discovered</th>
+          <th>version-identified</th>
+          <th>unit-test</th>
+          <th>code-review</th>
+          <th>alpha-test</th>
+          <th>beta-test</th>
+          <th>version-deployed</th>
+        </tr>
+        <!--issues-->
+      </tbody>
+    </table>
+  </div>
+
+
+</body>
+</html>
