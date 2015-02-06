@@ -2,6 +2,11 @@
 <html>
 <head>
   <title>SLIM</title>
+  <style type="text/css">
+    input, textarea {
+      background:#ccc;
+    }
+  </style>
 </head>
 <body>
   <h1>SLIM</h1>
@@ -14,20 +19,20 @@
       </pre>
     </div>
 
-    <div style='border:3px solid black;width:50%;'>
+    <div style='border:3px solid black;width:50%;margin-left:auto;margin-right:auto;'>
       <div>
         <form action="slim.html" method="post">
-          <table border='1' summary='Input for issue selection and modification.'>
+          <table border='1' width='100%' summary='Input for issue selection and modification.'>
             <caption>Input for issue selection and modification.</caption>
             <tbody>
               <tr><td>issue-id</td><td><input type='text' name='issue-id'></td>
-              <tr><td>name</td><td><textarea name='name'></textarea></td>
+              <tr><td>name</td><td><textarea style='width:100%' name='name'></textarea></td>
               <tr><td>date-discovered</td><td><input type='text' name='date-discovered'></td>
               <tr><td>version-identified</td><td><input type='text' name='version-identified'></td>
               <tr><td>unit-test</td><td><input type='text' name='unit-test'></td>
-              <tr><td>code-review</td><td><input type='text' name='code-review'></td>
-              <tr><td>alpha-test</td><td><input type='text' name='alpha-test'></td>
-              <tr><td>beta-test</td><td><input type='text' name='beta-test'></td>
+              <tr><td>code-review</td><td><input type='text' name='code-review-date'></td>
+              <tr><td>alpha-test</td><td><input type='text' name='alpha-test-date'></td>
+              <tr><td>beta-test</td><td><input type='text' name='beta-test-date'></td>
               <tr><td>version-deployed</td><td><input type='text' name='version-deployed'></td>
             </tbody>
           </table>

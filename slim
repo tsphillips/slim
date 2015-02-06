@@ -163,7 +163,10 @@ def print_issue(issue, issue_fields, csv=None, table=None):
     if table:
         result += '<tr>'
         for key in issue_fields:
-            result += '<td>' + issue[key] + '</td>'
+            if 'date' in key:
+                result += '<td style="white-space:nowrap">' + issue[key] + '</td>'
+            else:
+                result += '<td>' + issue[key] + '</td>'
         result += '</tr>'
     elif csv:
         for key in issue_fields:
