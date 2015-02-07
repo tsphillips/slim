@@ -183,15 +183,6 @@ issue-id   desc       date-disc  version-i  unit-test  code-revi  alpha-tes  bet
 Print an issue.
 '''
 def print_issue(issue, issue_fields, csv=None, table=None):
-    # print 'issue-id              =', issue['issue_id']
-    # print 'desc                  =', issue['desc']
-    # print 'date-discovered       =', issue['date_discovered']
-    # print 'version-identified    =', issue['version_identified']
-    # print 'unit-test-date        =', issue['unit_test_date']
-    # print 'code-review-date      =', issue['code_review_date']
-    # print 'integration-test-date =', issue['integration_test_date']
-    # print 'system-test-date      =', issue['system_test_date']
-    # print 'version-deployed      =', issue['version_deployed']
 
     result = ''
     if table:
@@ -345,16 +336,6 @@ def read_issue(conn, cursor, issue):
         cur_issue['version_deployed']       = row[8]
         issue_list.append(cur_issue.copy())
 
-        # print 'issue-id              =', row[0]
-        # print 'desc                  =', row[1]
-        # print 'date-discovered       =', row[2]
-        # print 'version-identified    =', row[3]
-        # print 'unit-test-date        =', row[4]
-        # print 'code-review-date      =', row[5]
-        # print 'integration-test-date =', row[6]
-        # print 'system-test-date      =', row[7]
-        # print 'version-deployed      =', row[8]
-
     return issue_list
 
 def modify_issue(conn, cursor, issue):
@@ -498,10 +479,6 @@ def slim_exec(opts):
         result += write_issue(conn, cursor, issue)
     if (command == 'modify'):
         issue_list = modify_issue(conn, cursor, issue)
-        # if (not csv):
-        #     print_header()
-        # for issue in issue_list:
-        #     print_issue(issue, issue_fields, csv)
 
     if (command == 'server'):
         try:
