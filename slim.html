@@ -10,8 +10,8 @@
 </head>
 <body>
   <h1>SLIM</h1>
-  <div>
-    <div>
+  <div style='display:block;'>
+    <div style='float:right;'>
       <pre>
         Somebody set up us the bug.
         Main slim turn on.
@@ -19,37 +19,40 @@
       </pre>
     </div>
 
-    <div style='border:3px solid black;width:50%;margin-left:auto;margin-right:auto;'>
+    <div style='border:3px solid black;width:50%;float:left;'>
       <div>
         <form action="slim.html" method="post">
           <table border='1' width='100%' summary='Input for issue selection and modification.'>
             <caption>Input for issue selection and modification.</caption>
             <tbody>
-              <tr><td>issue-id</td><td><input type='text' name='issue-id'></td>
-              <tr><td>name</td><td><textarea style='width:100%' name='name'></textarea></td>
-              <tr><td>date-discovered</td><td><input type='text' name='date-discovered'></td>
-              <tr><td>version-identified</td><td><input type='text' name='version-identified'></td>
-              <tr><td>unit-test</td><td><input type='text' name='unit-test'></td>
-              <tr><td>code-review</td><td><input type='text' name='code-review-date'></td>
-              <tr><td>alpha-test</td><td><input type='text' name='alpha-test-date'></td>
-              <tr><td>beta-test</td><td><input type='text' name='beta-test-date'></td>
-              <tr><td>version-deployed</td><td><input type='text' name='version-deployed'></td>
+              <tr><td>issue-id</td><td><input type='text' name='issue-id' id='issue_id'></td>
+              <tr><td>desc</td><td><textarea style='width:95%' name='desc' id='desc'></textarea></td>
+              <tr><td>date-discovered</td><td><input type='text' name='date-discovered' id='date_discovered'></td>
+              <tr><td>version-identified</td><td><input type='text' name='version-identified' id='version_identified'></td>
+              <tr><td>unit-test</td><td><input type='text' name='unit-test' id='unit_test_date'></td>
+              <tr><td>code-review</td><td><input type='text' name='code-review-date' id='code_review_date'></td>
+              <tr><td>alpha-test</td><td><input type='text' name='alpha-test-date' id='integration_test_date'></td>
+              <tr><td>beta-test</td><td><input type='text' name='beta-test-date' id='system_test_date'></td>
+              <tr><td>version-deployed</td><td><input type='text' name='version-deployed' id='version_deployed'></td>
             </tbody>
           </table>
 
           <hr>
-          <input type='submit' name='command' value='Read'>
-          <input type='submit' name='command' value='Modify'>
-          <input type='submit' name='command' value='Write' disabled='disabled'>
+          <div style='text-align:justify'>
+            <div style='display:inline-block;*display:inline; zoom:1;'><input type='submit' name='command' value='Read'></div>
+            <div style='display:inline-block;*display:inline; zoom:1;' ><input style='margin-left:auto;margin-right:auto;' type='submit' name='command' value='Modify'></div>
+            <div style='display:inline-block;*display:inline; zoom:1;'><input style='' type='submit' name='command' value='Write'></div>
+            <span style='width: 100%;display: inline-block;font-size: 0;line-height: 0'></span>
+          </div>
 
         </form>
       </div>
     </div>
+    <hr width='100%'>
   </div>
 
-  <p>&nbsp;</div>
 
-  <div style='width:100%;'>
+  <div style='display:block; width:100%;'>
 
     <table border='1' summary='List of select managed issues.'>
       <caption>List of Selected Issues</caption>

@@ -50,13 +50,23 @@ class SlimHandler (CGIHTTPServer.CGIHTTPRequestHandler):
             opts.append(('-r', ''))
         elif form['command'] == 'Modify':
             opts.append(('-m', ''))
+        elif form['command'] == 'Write':
+            opts.append(('-w', ''))
 
         for (key, value) in form.iteritems():
             if key[0] != '-':
                 key = '--' + key
-            # value = '"' + value + '"'
             opts.append((key, value))
         issues = slim_exec(opts)
+
+        if form['command'] == 'Modify':
+            opts = [('--table', ''), ('-r', ''), ('--issue-id', form['issue-id'])]
+            issues = slim_exec(opts)
+
+        if form['command'] == 'Write':
+            opts = [('--table', ''), ('-r', '')]
+            issues = slim_exec(opts)
+
         html = f.read()
         html = html.replace('<!--issues-->', issues)
         self.wfile.write(html)
@@ -104,6 +114,9 @@ OPTIONS WITH ARGUMENTS
     --id, --issue-id <id>
         Unique identifier for the issue.
 
+    --desc
+        Description of the issue.
+
     --date-discovered <date>
         Data the issue was first discovered.
 
@@ -140,7 +153,7 @@ Print a header for rows of issues.
 '''
 def print_header():
     print '''
-issue-id   name       date-disc  version-i  unit-test  code-revi  alpha-tes  beta-test  version-d
+issue-id   desc       date-disc  version-i  unit-test  code-revi  alpha-tes  beta-test  version-d
                       overed     dentified  -date      ew-date    t-date     -date      eployed
 ---------------------------------------------------------------------------------------------------'''
 
@@ -150,7 +163,7 @@ Print an issue.
 '''
 def print_issue(issue, issue_fields, csv=None, table=None):
     # print 'issue-id              =', issue['issue_id']
-    # print 'name                  =', issue['name']
+    # print 'desc                  =', issue['desc']
     # print 'date-discovered       =', issue['date_discovered']
     # print 'version-identified    =', issue['version_identified']
     # print 'unit-test-date        =', issue['unit_test_date']
@@ -165,6 +178,11 @@ def print_issue(issue, issue_fields, csv=None, table=None):
         for key in issue_fields:
             if 'date' in key:
                 result += '<td style="white-space:nowrap">' + issue[key] + '</td>'
+            elif key == 'issue_id':
+                script = ''
+                for i in issue_fields:
+                    script += 'document.getElementById(\'' + i + '\').value = \'' + issue[i]  + '\';'
+                result += '<td><a href="#' + issue[key] + '" onclick="' + script + '">' + issue[key] + '</a></td>'
             else:
                 result += '<td>' + issue[key] + '</td>'
         result += '</tr>'
@@ -209,7 +227,7 @@ def init_db(filename = 'slim.sqlite3'):
         cursor.execute('''
             CREATE TABLE issues (
                 issue_id                text UNIQUE PRIMARY KEY,
-                name                    text,
+                desc                    text,
                 date_discovered         text,
                 version_identified      text,
                 unit_test_date          text,
@@ -232,10 +250,13 @@ def init_db(filename = 'slim.sqlite3'):
     return (conn, cursor)
 
 def write_issue(conn, cursor, issue):
+    if issue['issue_id'] == '' or issue['desc'] == '':
+        print 'ERROR: issue_id or desc blank'
+        return '0'
     try:
         cursor.execute('''
             REPLACE INTO issues
-            (issue_id, name, date_discovered, version_identified,
+            (issue_id, desc, date_discovered, version_identified,
              unit_test_date,
              code_review_date, integration_test_date, system_test_date,
              version_deployed)
@@ -243,7 +264,7 @@ def write_issue(conn, cursor, issue):
             (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', ( \
             issue['issue_id'], \
-            issue['name'], \
+            issue['desc'], \
             issue['date_discovered'], \
             issue['version_identified'], \
             issue['unit_test_date'], \
@@ -277,7 +298,7 @@ def read_issue(conn, cursor, issue):
     try:
         cursor.execute('''
             SELECT
-                issue_id, name, date_discovered, version_identified,
+                issue_id, desc, date_discovered, version_identified,
                 unit_test_date,
                 code_review_date, integration_test_date, system_test_date,
                 version_deployed
@@ -285,7 +306,7 @@ def read_issue(conn, cursor, issue):
             {}
             ORDER BY version_deployed, system_test_date,
             integration_test_date, code_review_date, unit_test_date,
-            date_discovered DESC
+            date_discovered
             '''.format(search))
     except:
         sys.stderr.write('ERROR: SELECT failed\n');
@@ -293,7 +314,7 @@ def read_issue(conn, cursor, issue):
     cur_issue = {}
     for row in cursor:
         cur_issue['issue_id']               = row[0]
-        cur_issue['name']                   = row[1]
+        cur_issue['desc']                   = row[1]
         cur_issue['date_discovered']        = row[2]
         cur_issue['version_identified']     = row[3]
         cur_issue['unit_test_date']         = row[4]
@@ -304,7 +325,7 @@ def read_issue(conn, cursor, issue):
         issue_list.append(cur_issue.copy())
 
         # print 'issue-id              =', row[0]
-        # print 'name                  =', row[1]
+        # print 'desc                  =', row[1]
         # print 'date-discovered       =', row[2]
         # print 'version-identified    =', row[3]
         # print 'unit-test-date        =', row[4]
@@ -316,6 +337,8 @@ def read_issue(conn, cursor, issue):
     return issue_list
 
 def modify_issue(conn, cursor, issue):
+    if issue['issue_id'] == '':
+        return [] # no global mods!
     search = {'issue_id':issue['issue_id']}
     issue_list = read_issue(conn, cursor, search)
     for old_issue in issue_list:
@@ -340,7 +363,7 @@ def main():
                     'db=', \
                     'id=', \
                     'issue-id=', \
-                    'name=', \
+                    'desc=', \
                     'date-discovered=', \
                     'version-identified=', \
                     'unit-test-date=', \
@@ -366,7 +389,7 @@ def slim_exec(opts):
 
     # issue and comment data structures
     issue_fields = ('issue_id', \
-                    'name', \
+                    'desc', \
                     'date_discovered', \
                     'version_identified', \
                     'unit_test_date',\
@@ -421,8 +444,8 @@ def slim_exec(opts):
 
         if o in ('--id', '--issue-id'):
             issue['issue_id'] = a
-        if o in ('--name'):
-            issue['name'] = a
+        if o in ('--desc'):
+            issue['desc'] = a
         if o in ('--date-discovered'):
             issue['date_discovered'] = a
         if o in ('--version-identified'):
