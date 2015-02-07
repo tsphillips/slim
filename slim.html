@@ -1,4 +1,25 @@
 <!DOCTYPE html>
+<!--
+Copyright (c) 2015 Thomas S. Phillips.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-->
 <html>
 <head>
   <title>SLIM</title>
@@ -11,7 +32,17 @@
 <body>
   <h1>SLIM</h1>
   <div style='display:block;'>
-    <div style='float:right;'>
+    <div style='display:inline-block;float:right;width:45%;'>
+      This is the workflow Slim supports:
+      <ol>
+        <li>Write code.</li>
+        <li>Run unit tests.</li>
+        <li>Do a code review.</li>
+        <li>Do an integration test. Passing this yields something for alpha testing.</li>
+        <li>Do a system test. Passing this yields something for beta testing.</li>
+        <li>Ship it! Create a version and deploy.</li>
+      </ol>
+      <hr>
       <pre>
         Somebody set up us the bug.
         Main slim turn on.
@@ -23,7 +54,7 @@
       <div>
         <form action="slim.html" method="post">
           <table border='1' width='100%' summary='Input for issue selection and modification.'>
-            <caption>Input for issue selection and modification.</caption>
+            <caption>Input for Issue Selection and Modification</caption>
             <tbody>
               <tr><td>issue-id</td><td><input type='text' name='issue-id' id='issue_id'></td>
               <tr><td>desc</td><td><textarea style='width:95%' name='desc' id='desc'></textarea></td>
