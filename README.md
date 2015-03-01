@@ -32,6 +32,9 @@ Why not use something that is already full-featured and good, like Trac?
 How to I set it up, install it, and configure it?
 - You don't.  Put **slim** and **slim.html** into a directory with write access and run **slim -h**.  Run **slim --server** if you want to live on the edge.
 
+What can I use for an issue-id?
+- You must use one or more digits (0-9) for an issue-id. This is because custom functions are made on-the-fly, each named for an issue-id. Should this be refactored?  Yeah, probably.
+
 ## Components
 
 | Component    | Description                                                                                                                           |
