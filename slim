@@ -204,12 +204,14 @@ def print_issue(issue, issue_fields, csv=None, table=None):
                 result += '\n<script>' + script + '</script>\n'
                 result += '<td><a href="#' + issue[key] + '" onclick="' + 'f' + issue[key] + '();' + '">' + issue[key] + '</a></td>'
             else:
+                # This section needs a refactor.
                 value = issue[key].replace('\n', '', 99)
                 value = value.replace('\r', '', 99)
                 value = value.replace("'", '', 99)
                 m = p.match(value)
                 if m and m.group(1):
-                    result += '<td>' + value.replace(m.group(1), '<a href="#' + m.group(1) + '" onclick="' + 'f' + m.group(1) + '();' + '">' + m.group(1) + '</a>') + '</td>'
+                    value = value.replace(m.group(1), '<a href="#' + m.group(1) + '" onclick="' + 'f' + m.group(1) + '();' + '">' + m.group(1) + '</a>')
+                    result += '<td>' + value + '</td>'
                 else:
                     result += '<td>' + value + '</td>'
         result += '</tr>'
