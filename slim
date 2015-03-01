@@ -23,6 +23,7 @@ THE SOFTWARE.
 
 import cgi
 import getopt
+import re
 import sqlite3
 import sys
 import time
@@ -184,6 +185,8 @@ Print an issue.
 '''
 def print_issue(issue, issue_fields, csv=None, table=None):
 
+    p = re.compile('.*#(\d+).*')
+
     result = ''
     if table:
         result += '<tr>'
@@ -194,9 +197,15 @@ def print_issue(issue, issue_fields, csv=None, table=None):
                 script = ''
                 for i in issue_fields:
                     script += 'document.getElementById(\'' + i + '\').value = \'' + issue[i]  + '\';'
-                result += '<td><a href="#' + issue[key] + '" onclick="' + script + '">' + issue[key] + '</a></td>'
+                script = "function f" + issue[key] + '(){' + script + '};'
+                result += '\n<script>' + script + '</script>\n'
+                result += '<td><a href="#' + issue[key] + '" onclick="' + 'f' + issue[key] + '();' + '">' + issue[key] + '</a></td>'
             else:
-                result += '<td>' + issue[key] + '</td>'
+                m = p.match(issue[key])
+                if m and m.group(1):
+                    result += '<td>' + issue[key].replace(m.group(1), '<a href="#' + m.group(1) + '" onclick="' + 'f' + m.group(1) + '();' + '">' + m.group(1) + '</a>') + '</td>'
+                else:
+                    result += '<td>' + issue[key] + '</td>'
         result += '</tr>'
     elif csv:
         for key in issue_fields:
