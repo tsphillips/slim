@@ -182,10 +182,13 @@ issue-id   desc       date-disc  version-i  unit-test  code-revi  alpha-tes  bet
 
 '''
 Print an issue.
+Within a field, #123456 represents a link to an issue.
+Starting a field, XYZ: represents requirement XYZ.
 '''
 def print_issue(issue, issue_fields, csv=None, table=None):
 
     p = re.compile('.*#(\d+).*')
+    requirement_re = re.compile('^([a-zA-Z0-9_.]+:).*')
 
     result = ''
     if table:
@@ -208,6 +211,9 @@ def print_issue(issue, issue_fields, csv=None, table=None):
                 value = issue[key].replace('\n', '', 99)
                 value = value.replace('\r', '', 99)
                 value = value.replace("'", '', 99)
+                req_match = requirement_re.match(value)
+                if req_match and req_match.group(1):
+                    value = value.replace(req_match.group(1), '<b>' + req_match.group(1) + '</b>')
                 m = p.match(value)
                 if m and m.group(1):
                     value = value.replace(m.group(1), '<a href="#' + m.group(1) + '" onclick="' + 'f' + m.group(1) + '();' + '">' + m.group(1) + '</a>')
